@@ -1,4 +1,4 @@
-# 4th-team3-health-screening
+# 4th-team3-health-screening(개인)
 
 # screeningReservation (건강검진 예약 서비스)
 
@@ -47,7 +47,7 @@
 1. 관리자의 병원 정보 삭제에 따라서 해당 병원에 예약한 예약자의 상태를 변경한다.
 1. 관리자의 병원 정보 삭제에 따라서 예약관리의 해당 내역의 상태가 예약 강제 취소로 변경된다.
 1. 사용자가 건강검진 예약내역 상태를 조회한다.
-1. 관리자가 건강검진 관련 데이터를 조회한다.(추가)
+1. 관리자가 건강검진 관련 데이터들을 조회하고 분석한다.(추가)
 
 
 
@@ -71,7 +71,7 @@
 | 6.고객이 건강검진 예약을 취소한다.</br>7.취소 시, 병원의 검진가능 인원이 증가한다. (Async)</br>8.예약관리의 해당 내역의 상태가 예약 취소로 변경된다. | ![image](https://user-images.githubusercontent.com/25805562/91837990-c2227680-ec87-11ea-9fb1-530410922532.png) |
 | 9.관리자가 병원 정보를 삭제한다.</br>10.해당 병원에 예약한 예약자의 상태를 예약 강제 취소 변경한다.</br>11.예약관리의 해당 내역의 상태가 예약 강제 취소로 변경된다. | ![image](https://user-images.githubusercontent.com/25805562/91838119-f007bb00-ec87-11ea-9edd-38d9963f9ee0.png) | 
 | 12.건강검진 예약내역 상태를 조회한다.| ![image](https://user-images.githubusercontent.com/25805562/91838415-6ad0d600-ec88-11ea-9df8-1c6895fe6d75.png) |
-
+  13(개인)건강검진 예약내역 상태를 조회 한다.  
 # 분석/설계
 
 ## Event Storming 결과
@@ -313,6 +313,12 @@ MSA 서비스별 CodeBuild 프로젝트 생성하여  CI/CD 파이프라인 구�
 <img src="https://user-images.githubusercontent.com/67447253/91837300-0103fc80-ec87-11ea-9698-fc1afb52893c.JPG" />
 
 
+
+### (개인)CodeBuild 빌드 구성
+![codebuild](https://user-images.githubusercontent.com/19723648/92048962-f9963d80-edc3-11ea-83a3-19cd5030d53a.png)
+
+
+
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 
 ### 서킷 브레이킹 istio-injection + DestinationRule
@@ -433,6 +439,10 @@ Shortest transaction:           0.00
 ```
 kubectl delete -f dr-hospital.yaml
 ```
+### (개인)서킷 브레이킹 동작 확인 (kiali 화면)
+![써킷브레이크설정](https://user-images.githubusercontent.com/19723648/92060615-387dc080-edcf-11ea-8531-0262470e9bbc.PNG)
+
+
 
 
 ### 오토스케일 아웃
@@ -509,7 +519,7 @@ $  siege -c100 -t60S -r10  -v http://a67fdf8668e5d4b518f8ac2a62bd4b45-334568913.
 
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
 ```
-kubectl get deploy hospitalmanage -n skcc-ns -w 
+watch kubectl get deploy hospitalmanage -n skcc-ns -w 
 ```
 
 - 어느정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다:
@@ -554,6 +564,13 @@ Shortest transaction:           0.00
 ```
 $kubectl kubectl delete hpa hospitalmanage  -n skcc-ns
 ```
+
+### (개인)오토스케일 아웃 테스트 
+-  reservationmanage에 HPA 적용하여 테스트한 결과 
+
+![오토스케일](https://user-images.githubusercontent.com/19723648/92062774-74675480-edd4-11ea-9398-7090ad2fd715.PNG)
+
+![cpu](https://user-images.githubusercontent.com/19723648/92062883-af698800-edd4-11ea-9ac0-284fd82ccc4b.PNG)
 
 
 ## 무정지 재배포
@@ -648,6 +665,15 @@ Shortest transaction:           0.41
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
 
+### (개인)무정지 배포 테스트 
+-  reservationmanage에 HPA 적용하여 테스트한 결과 
+![무중단](https://user-images.githubusercontent.com/19723648/92064252-150b4380-edd8-11ea-8c4b-0263f7e14364.PNG)
+![무중단2](https://user-images.githubusercontent.com/19723648/92064452-77644400-edd8-11ea-8377-e02b1956e613.PNG)
+
+
+
+
+
 
 ## ConfigMap 사용
 
@@ -738,3 +764,25 @@ Containers:
 ```
 kubectl describe 명령으로 컨테이너에 configMap 적용여부를 알 수 있다. 
 
+### (개인)config Map 
+-  configMap 추가 적용 
+
+my-config2.yaml 추가
+```
+my-config2.yaml
+Containers:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config2
+  namespace: skcc-ns
+data:
+  destination : local
+```
+
+application.yaml의 binding destination에 적용
+
+![바인딩 적용](https://user-images.githubusercontent.com/19723648/92071686-5a387100-edea-11ea-99ce-3f70974082fb.PNG)
+
+$kubectl describe 적용내용
+![myconfig2](https://user-images.githubusercontent.com/19723648/92071602-19d8f300-edea-11ea-8892-157c3f269b48.PNG)
